@@ -177,9 +177,7 @@ def mutual_mutual(data,label,k=10):#互信息
     mask=model_mutual.get_support(indices=True)
     return new_data,mask
 
-def lassodimension(data,label,alpha=np.array([0.005])):
-#def lassodimension(data,label,alpha=np.array([0.005])):####acc=91.82%
-#def lassodimension(data,label,alpha=np.array([0.01,0.05,0.1])):#The alpha value range is 0.001, 0.002, 0.005, 0.01, 0.015, 0.02
+def lassodimension(data,label,alpha=np.array([0.026])):
     lassocv=LassoCV(cv=5, alphas=alpha).fit(data, label)
     x_lasso = lassocv.fit(data,label)#Substituting alpha for dimensionality reduction
     mask = x_lasso.coef_ != 0 
@@ -200,13 +198,7 @@ def elasticNet(data,label,alpha =np.array([0.01])):
     mask = enet.coef_ != 0
     new_data = data[:,mask]
     return new_data,mask,enetCV.alpha_
-#def elasticNet(data,label,alpha =np.array([0.01])):
-#    enetCV = ElasticNetCV(alphas=alpha,l1_ratio=0.01).fit(data,label)
-#    enet=ElasticNet(alpha=enetCV.alpha_, l1_ratio=0.01)
-#    enet.fit(data,label)
-#    mask = enet.coef_ != 0
-#    new_data = data[:,mask]
-#    return new_data,mask,enetCV.alpha_
+
 
 def SE(data,n_components=20):
     embedding = SpectralEmbedding(n_components=n_components)
@@ -222,42 +214,22 @@ def TSVD(data,n_components=300):
     svd = TruncatedSVD(n_components=n_components)
     new_data=svd.fit_transform(data)  
     return new_data
-###############################################################################################################3
-#data_train = sio.loadmat('cross.mat')
-#data=data_train.get('shucross')#Remove the data in the dictionary
+
 data_train = sio.loadmat('EBGW4_cross.mat')
 data=data_train.get('shuEBGW4_cross')#Remove the data in the dictionary
 shu=data
 shu=scale(shu)
-#label1=np.ones((284,1))#Value can be changed
-#label2=np.zeros((303,1))
 label1=np.ones((1420,1))#Value can be changed
 label2=np.zeros((1514,1))
 label=np.append(label1,label2)
-#####################################################################################
-#data_1,mask,H=elasticNet(shu,label)#引用降维
 data_1,mask=lassodimension(shu,label)
-#data_1=SE(shu)
-#####################################################
 X=data_1
-y=label#############降维
-#########################################################################################
-#X=shu
-#y=label##############不降维
-####################################
+y=label
 sepscores = []
 ytest=np.ones((1,2))*0.5
 yscore=np.ones((1,2))*0.5
-################################################################################################
 
-cv_clf = RandomForestClassifier(n_estimators=100, criterion='gini', max_depth=7, 
-                               min_samples_split=2, min_samples_leaf=1, 
-                               min_weight_fraction_leaf=0.0, max_features='auto', 
-                               max_leaf_nodes=None,  bootstrap=True, 
-                               oob_score=False, n_jobs=1, random_state=None, verbose=0, 
-                               warm_start=False, class_weight=None)
-   
-####################################################################################################3
+cv_clf = RandomForestClassifier()
 skf= StratifiedKFold(n_splits=5)
 for train, test in skf.split(X,y): 
     y_train=utils.to_categorical(y[train])

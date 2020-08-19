@@ -10,14 +10,14 @@ The experimental environment is: Windows Server 2012R2 Intel (R) Xeon (TM) CPU E
 * numpy
 * scipy
 * scikit-learn
-
+* lightgbm
 
 ###Guiding principles:
 
-**The data contains training dataset and independent test dataset.
+**The data contains the training dataset and the independent test dataset.
 
 **Feature extraction:
-   PsePSSM is the implementation of pseudo position specific scoring matrix.
+   PsePSSM is the implementation of pseudo position-specific scoring matrix.
    AAC is the implementation of amino acid composition.
    DC is the implementation of dipeptide composition.
    CTD is the implementation of composition transition distribution.
@@ -38,11 +38,11 @@ The experimental environment is: Windows Server 2012R2 Intel (R) Xeon (TM) CPU E
 ** Classifier:
    AdaBoost.py is the implementation of adaptive boosting.
    GBDT.py is the implementation of gradient boosting decision tree.
-   LR.py is the implementation of logistic regression.
    NB.py is the implementation of Naïve Bayes.
    RF.py is the implementation of random forest.
-   SVM.py is the implementation of support vector machine.
    KNN.py is the implementation of k-nearest neighbor.
+   MLP.py is the implementation of multi-layer perceptron.
+   SVM.py is the implementation of support vector machine.
    LightGBM.py is the implementation of light gradient boosting machine.
    
 

@@ -140,76 +140,8 @@ def percentage2n(eigVals,percentage=0.99):
         num+=1
         if tmpSum>=arraySum*percentage:
             return num
-def factorAnalysis(data,percentage = 0.9):
-    dataMat = np.array(data) 
-    newData,meanVal=zeroMean(data)  #equalization
-    covMat=covArray(newData)  #covariance matrix
-    eigVals,eigVects=featureMatrix(covMat)
-    n_components = percentage2n(eigVals,percentage)
-    clf = FactorAnalysis(n_components=n_components)
-    new_data = clf.fit_transform(dataMat)
-    return new_data
 
-def pca(data,percentage = 0.9):  
-    dataMat = np.array(data) 
-    newData,meanVal=zeroMean(data)  #equalization
-    covMat=covArray(newData)  #covariance matrix
-    eigVals,eigVects=featureMatrix(covMat)
-    n_components = percentage2n(eigVals,percentage)
-    clf=PCA(n_components=n_components)  
-    new_data = clf.fit_transform(dataMat)
-    return new_data
-
-def kernelPCA(data,percentage=0.2):
-    dataMat = np.array(data)  
-    newData,meanVal=zeroMean(data)  
-    covMat=covArray(newData)  
-    eigVals,eigVects=featureMatrix(covMat)
-    n_components = percentage2n(eigVals,percentage)
-    #n_component=n_components
-    clf=KernelPCA(n_components=n_components,kernel='rbf',gamma=1/1318)#rbf linear poly
-    new_data=clf.fit_transform(dataMat)
-    return new_data
-
-def mutual_mutual(data,label,k=10):#互信息
-    model_mutual= SelectKBest(mutual_info_classif, k=k)
-    new_data=model_mutual.fit_transform(data, label)
-    mask=model_mutual.get_support(indices=True)
-    return new_data,mask
-
-def lassodimension(data,label,alpha=np.array([0.005])):
-    lassocv=LassoCV(cv=5, alphas=alpha).fit(data, label)
-    x_lasso = lassocv.fit(data,label)#Substituting alpha for dimensionality reduction
-    mask = x_lasso.coef_ != 0 
-    new_data = data[:,mask] 
-    return new_data,mask 
-
-def logistic_dimension(data,label,parameter=1):
-    logistic_=LogisticRegression(penalty="l1", C=parameter,max_iter=30)
-    model=SelectFromModel(logistic_)
-    new_data=model.fit_transform(data, label)
-    mask=model.get_support(indices=True)
-    return new_data,mask
-# using factor analysis to reduce the dimension
-def elasticNet(data,label,alpha =np.array([0.01])):
-    enetCV = ElasticNetCV(alphas=alpha,l1_ratio=0.01).fit(data,label)
-    enet=ElasticNet(alpha=enetCV.alpha_, l1_ratio=0.01)
-    enet.fit(data,label)
-    mask = enet.coef_ != 0
-    new_data = data[:,mask]
-    return new_data,mask,enetCV.alpha_
-
-
-def SE(data,n_components=20):
-    embedding = SpectralEmbedding(n_components=n_components)
-    X_transformed = embedding.fit_transform(data)
-    return X_transformed
-
-def LLE(data,n_components=30):
-    embedding = LocallyLinearEmbedding(n_components=n_components)
-    X_transformed = embedding.fit_transform(data)
-    return X_transformed
-def TSVD(data,n_components=300):
+def TSVD(data,n_components=57):
     
     svd = TruncatedSVD(n_components=n_components)
     new_data=svd.fit_transform(data)  
@@ -232,7 +164,7 @@ ytest=np.ones((1,2))*0.5
 yscore=np.ones((1,2))*0.5
 ################################################################################################
 
-cv_clf=lgb.LGBMClassifier(n_estimators=150,max_depth=5,learning_rate=0.1,num_leaves=31)
+cv_clf=lgb.LGBMClassifier()
  
 ####################################################################################################3
 skf= StratifiedKFold(n_splits=5)

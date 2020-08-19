@@ -71,8 +71,6 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
-from sklearn.linear_model import Lasso, LassoCV
-from sklearn.linear_model import ElasticNet, ElasticNetCV
 from sklearn.preprocessing import scale,StandardScaler
 from sklearn.model_selection import cross_val_predict
 from sklearn.neighbors import KNeighborsClassifier
@@ -101,7 +99,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.svm import LinearSVC,SVC
 from sklearn.manifold import SpectralEmbedding 
 from sklearn.ensemble import ExtraTreesClassifier
-
+from sklearn.neural_network import MLPClassifier
 def zscore_scaler(data):
     data=scale(H)
     return data
@@ -140,13 +138,80 @@ def percentage2n(eigVals,percentage=0.99):
         num+=1
         if tmpSum>=arraySum*percentage:
             return num
+def factorAnalysis(data,percentage = 0.9):
+    dataMat = np.array(data) 
+    newData,meanVal=zeroMean(data)  #equalization
+    covMat=covArray(newData)  #covariance matrix
+    eigVals,eigVects=featureMatrix(covMat)
+    n_components = percentage2n(eigVals,percentage)
+    clf = FactorAnalysis(n_components=n_components)
+    new_data = clf.fit_transform(dataMat)
+    return new_data
 
-def SE(data,n_components=57):
+def pca(data,percentage = 0.9):  
+    dataMat = np.array(data) 
+    newData,meanVal=zeroMean(data)  #equalization
+    covMat=covArray(newData)  #covariance matrix
+    eigVals,eigVects=featureMatrix(covMat)
+    n_components = percentage2n(eigVals,percentage)
+    clf=PCA(n_components=n_components)  
+    new_data = clf.fit_transform(dataMat)
+    return new_data
+
+def kernelPCA(data,percentage=0.2):
+    dataMat = np.array(data)  
+    newData,meanVal=zeroMean(data)  
+    covMat=covArray(newData)  
+    eigVals,eigVects=featureMatrix(covMat)
+    n_components = percentage2n(eigVals,percentage)
+    #n_component=n_components
+    clf=KernelPCA(n_components=n_components,kernel='rbf',gamma=1/1318)#rbf linear poly
+    new_data=clf.fit_transform(dataMat)
+    return new_data
+
+def mutual_mutual(data,label,k=10):#互信息
+    model_mutual= SelectKBest(mutual_info_classif, k=k)
+    new_data=model_mutual.fit_transform(data, label)
+    mask=model_mutual.get_support(indices=True)
+    return new_data,mask
+
+def lassodimension(data,label,alpha=np.array([0.026])):
+    lassocv=LassoCV(cv=5, alphas=alpha).fit(data, label)
+    x_lasso = lassocv.fit(data,label)#Substituting alpha for dimensionality reduction
+    mask = x_lasso.coef_ != 0 
+    new_data = data[:,mask] 
+    return new_data,mask 
+
+def logistic_dimension(data,label,parameter=1):
+    logistic_=LogisticRegression(penalty="l1", C=parameter,max_iter=30)
+    model=SelectFromModel(logistic_)
+    new_data=model.fit_transform(data, label)
+    mask=model.get_support(indices=True)
+    return new_data,mask
+# using factor analysis to reduce the dimension
+def elasticNet(data,label,alpha =np.array([0.01])):
+    enetCV = ElasticNetCV(alphas=alpha,l1_ratio=0.01).fit(data,label)
+    enet=ElasticNet(alpha=enetCV.alpha_, l1_ratio=0.01)
+    enet.fit(data,label)
+    mask = enet.coef_ != 0
+    new_data = data[:,mask]
+    return new_data,mask,enetCV.alpha_
+
+def SE(data,n_components=20):
     embedding = SpectralEmbedding(n_components=n_components)
     X_transformed = embedding.fit_transform(data)
     return X_transformed
 
-###############################################################################################################3
+def LLE(data,n_components=30):
+    embedding = LocallyLinearEmbedding(n_components=n_components)
+    X_transformed = embedding.fit_transform(data)
+    return X_transformed
+def TSVD(data,n_components=300):
+    
+    svd = TruncatedSVD(n_components=n_components)
+    new_data=svd.fit_transform(data)  
+    return new_data
+
 data_train = sio.loadmat('EBGW4_cross.mat')
 data=data_train.get('shuEBGW4_cross')#Remove the data in the dictionary
 shu=data
@@ -154,20 +219,13 @@ shu=scale(shu)
 label1=np.ones((1420,1))#Value can be changed
 label2=np.zeros((1514,1))
 label=np.append(label1,label2)
-#####################################################################################
-
-data_1=SE(shu)
+data_1,mask=lassodimension(shu,label)
 X=data_1
 y=label
-
 sepscores = []
 ytest=np.ones((1,2))*0.5
 yscore=np.ones((1,2))*0.5
-################################################################################################
-
-cv_clf=lgb.LGBMClassifier()
- 
-####################################################################################################3
+cv_clf = MLPClassifier()
 skf= StratifiedKFold(n_splits=5)
 for train, test in skf.split(X,y): 
     y_train=utils.to_categorical(y[train])
@@ -201,15 +259,15 @@ result=sepscores
 row=yscore.shape[0]
 yscore=yscore[np.array(range(1,row)),:]
 yscore_sum = pd.DataFrame(data=yscore)
-yscore_sum.to_csv('yscore_EBGW4_cross.csv')
+yscore_sum.to_csv('yscore_SVM_cross.csv')
 ytest=ytest[np.array(range(1,row)),:]
 ytest_sum = pd.DataFrame(data=ytest)
-ytest_sum.to_csv('ytest_EBGW4_cross.csv')
+ytest_sum.to_csv('ytest_SVM_cross.csv')
 fpr, tpr, _ = roc_curve(ytest[:,0], yscore[:,0])
 auc_score=np.mean(scores, axis=0)[7]
 lw=2
 plt.plot(fpr, tpr, color='darkorange',
-lw=lw, label='EBGW4_cross ROC (area = %0.2f%%)' % auc_score)
+lw=lw, label='SVM_cross ROC (area = %0.2f%%)' % auc_score)
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 plt.xlim([0.0, 1.05])
 plt.ylim([0.0, 1.05])
@@ -219,5 +277,6 @@ plt.title('Receiver operating characteristic')
 plt.legend(loc="lower right")
 plt.show()
 data_csv = pd.DataFrame(data=result)
-data_csv.to_csv('result_EBGW4_cross.csv')
+data_csv.to_csv('result_SVM_cross.csv')
+
 

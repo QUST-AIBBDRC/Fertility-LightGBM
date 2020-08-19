@@ -177,7 +177,7 @@ def mutual_mutual(data,label,k=10):#互信息
     mask=model_mutual.get_support(indices=True)
     return new_data,mask
 
-def lassodimension(data,label,alpha=np.array([0.005])):
+def lassodimension(data,label,alpha=np.array([0.026])):
     lassocv=LassoCV(cv=5, alphas=alpha).fit(data, label)
     x_lasso = lassocv.fit(data,label)#Substituting alpha for dimensionality reduction
     mask = x_lasso.coef_ != 0 
@@ -214,7 +214,6 @@ def TSVD(data,n_components=300):
     svd = TruncatedSVD(n_components=n_components)
     new_data=svd.fit_transform(data)  
     return new_data
-###############################################################################################################3
 data_train = sio.loadmat('EBGW4_cross.mat')
 data=data_train.get('shuEBGW4_cross')#Remove the data in the dictionary
 shu=data
@@ -222,21 +221,14 @@ shu=scale(shu)
 label1=np.ones((1420,1))#Value can be changed
 label2=np.zeros((1514,1))
 label=np.append(label1,label2)
-#####################################################################################
-#data_1,mask,H=elasticNet(shu,label)#引用降维
 data_1,mask=lassodimension(shu,label)
-#data_1=SE(shu)
 X=data_1
 y=label
 
 sepscores = []
 ytest=np.ones((1,2))*0.5
 yscore=np.ones((1,2))*0.5
-################################################################################################
-
-cv_clf=lgb.LGBMClassifier(n_estimators=150,max_depth=5,learning_rate=0.1,num_leaves=31)
- 
-####################################################################################################3
+cv_clf=lgb.LGBMClassifier()
 skf= StratifiedKFold(n_splits=5)
 for train, test in skf.split(X,y): 
     y_train=utils.to_categorical(y[train])
@@ -289,9 +281,5 @@ plt.legend(loc="lower right")
 plt.show()
 data_csv = pd.DataFrame(data=result)
 data_csv.to_csv('result_EBGW4_cross.csv')
-#########################################################################
-#colum = ['ACC', 'precision', 'npv', 'Sn', 'Sp','MCC','F1','AUC']
-#ro=['1', '2', '3','4','5','6']
-#data_csv = pd.DataFrame(columns=colum, data=result,index=ro)
-#data_csv.to_csv(r'result_DPC_Cross.csv')
+
 
